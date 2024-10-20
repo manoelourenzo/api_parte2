@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Planos de Saúde</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #003366;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #003366;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #e9f2fb;
+        }
+        tr:hover {
+            background-color: #cce7ff;
+        }
+        form {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input, button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #003366;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #00509e;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lista de Planos de Saúde</h1>
+    <div class="navigation"></div>
+        <button onclick="window.location.href='planos.html'">Planos de Saúde</button>
+        <button onclick="window.location.href='medicos.html'">Médicos</button>
+        <button onclick="window.location.href='medicos_planos.html'">Médicos que Atendem Planos</button>
+    </div>
+    <form id="planoForm">
+        <input type="hidden" id="planoId" />
+        <input type="text" id="tipo_cobertura" placeholder="Tipo de Cobertura" required />
+        <input type="text" id="nome" placeholder="Nome do Plano" required />
+        <button type="submit">Adicionar/Editar Plano</button>
+    </form>
+
+    <table id="planosTable">
+        <thead>
+            <tr>
+                <th>ID Plano</th>
+                <th>Tipo de Cobertura</th>
+                <th>Nome</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Os dados dos planos serão inseridos aqui -->
+        </tbody>
+    </table>
+
+    <script>
+        const apiUrl = 'http://127.0.0.1:8000/planos/';
+
+        // Função para buscar planos
+        async function fetchPlanos() {
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                const planosTableBody = document.getElementById('planosTable').querySelector('tbody');
+                planosTableBody.innerHTML = ''; // Limpa a tabela antes de adicionar novos dados
+
+                data.forEach(plano => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${plano.id_plano}</td>
+                        <td>${plano.tipo_cobertura}</td>
+                        <td>${plano.nome}</td>
+                        <td>
+                            <button onclick="editPlano(${plano.id_plano}, '${plano.tipo_cobertura}', '${plano.nome}')">Editar</button>
+                            <button onclick="deletePlano(${plano.id_plano})">Deletar</button>
+                        </td>
+                    `;
+                    planosTableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Erro ao buscar planos:', error);
+            }
+        }
+
+        // Função para adicionar ou editar plano
+        async function addOrUpdatePlano(event) {
+            event.preventDefault(); // Impede o envio do formulário
+            const id = document.getElementById('planoId').value;
+            const tipo_cobertura = document.getElementById('tipo_cobertura').value;
+            const nome = document.getElementById('nome').value;
+            const method = id ? 'PUT' : 'POST'; // Se id existir, faz PUT, caso contrário faz POST
+            const url = id ? `${apiUrl}${id}/` : apiUrl;
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ tipo_cobertura, nome }),
+                });
+
+                if (response.ok) {
+                    fetchPlanos(); // Atualiza a lista de planos
+                    resetForm(); // Reseta o formulário
+                } else {
+                    console.error('Erro ao adicionar/editar plano:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+            }
+        }
+
+        // Função para editar plano
+        function editPlano(id, tipo_cobertura, nome) {
+            document.getElementById('planoId').value = id;
+            document.getElementById('tipo_cobertura').value = tipo_cobertura;
+            document.getElementById('nome').value = nome;
+        }
+
+        // Função para deletar plano
+        async function deletePlano(id) {
+            try {
+                const response = await fetch(`${apiUrl}${id}/`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    fetchPlanos(); // Atualiza a lista de planos
+                } else {
+                    console.error('Erro ao deletar plano:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+            }
+        }
+
+        // Função para resetar o formulário
+        function resetForm() {
+            document.getElementById('planoId').value = '';
+            document.getElementById('tipo_cobertura').value = '';
+            document.getElementById('nome').value = '';
+        }
+
+        // Chama a função para buscar planos ao carregar a página
+        window.onload = fetchPlanos;
+        document.getElementById('planoForm').addEventListener('submit', addOrUpdatePlano);
+    </script>
+</body>
+</html>

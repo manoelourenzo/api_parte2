@@ -1,0 +1,36 @@
+<!-- meu_app/templates/meu_app/lista_medicos.html -->
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Médicos</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">  <!-- Adicione seu CSS aqui -->
+</head>
+<body>
+    <h1>Lista de Médicos</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>ID Funcionário</th>
+                <th>CRM</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for medico in medicos %}
+            <tr>
+                <td>{{ medico.id_medico }}</td>
+                <td>{{ medico.id_funcionario }}</td>
+                <td>{{ medico.crm }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">Nenhum médico cadastrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

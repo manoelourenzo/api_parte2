@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Médicos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #003366;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #003366;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #e9f2fb;
+        }
+        tr:hover {
+            background-color: #cce7ff;
+        }
+        form {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input, button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #003366;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #00509e;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lista de Médicos</h1>
+
+    <form id="medicoForm">
+        <input type="hidden" id="medicoId" />
+        <input type="text" id="id_funcionario" placeholder="ID Funcionário" required />
+        <input type="text" id="crm" placeholder="CRM" required />
+        <button type="submit">Adicionar/Editar Médico</button>
+    </form>
+
+    <table id="medicosTable">
+        <thead>
+            <tr>
+                <th>ID Médico</th>
+                <th>ID Funcionário</th>
+                <th>CRM</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Os dados dos médicos serão inseridos aqui -->
+        </tbody>
+    </table>
+
+    <script>
+        const apiUrl = 'http://127.0.0.1:8000/medicos/';
+
+        // Função para buscar médicos
+        async function fetchMedicos() {
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                const medicosTableBody = document.getElementById('medicosTable').querySelector('tbody');
+                medicosTableBody.innerHTML = ''; // Limpa a tabela antes de adicionar novos dados
+
+                data.forEach(medico => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${medico.id_medico}</td>
+                        <td>${medico.id_funcionario}</td>
+                        <td>${medico.crm}</td>
+                        <td>
+                            <button onclick="editMedico(${medico.id_medico}, '${medico.id_funcionario}', '${medico.crm}')">Editar</button>
+                            <button onclick="deleteMedico(${medico.id_medico})">Deletar</button>
+                        </td>
+                    `;
+                    medicosTableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Erro ao buscar médicos:', error);
+            }
+        }
+
+        // Função para adicionar ou editar médico
+        async function addOrUpdateMedico(event) {
+            event.preventDefault(); // Impede o envio do formulário
+            const id = document.getElementById('medicoId').value;
+            const id_funcionario = document.getElementById('id_funcionario').value;
+            const crm = document.getElementById('crm').value;
+            const method = id ? 'PUT' : 'POST'; // Se id existir, faz PUT, caso contrário faz POST
+            const url = id ? `${apiUrl}${id}/` : apiUrl;
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id_funcionario, crm }),
+                });
+
+                if (response.ok) {
+                    fetchMedicos(); // Atualiza a lista de médicos
+                    resetForm(); // Reseta o formulário
+                } else {
+                    console.error('Erro ao adicionar/editar médico:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+            }
+        }
+
+        // Função para editar médico
+        function editMedico(id, id_funcionario, crm) {
+            document.getElementById('medicoId').value = id;
+            document.getElementById('id_funcionario').value = id_funcionario;
+            document.getElementById('crm').value = crm;
+        }
+
+        // Função para deletar médico
+        async function deleteMedico(id) {
+            try {
+                const response = await fetch(`${apiUrl}${id}/`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    fetchMedicos(); // Atualiza a lista de médicos
+                } else {
+                    console.error('Erro ao deletar médico:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+            }
+        }
+
+        // Função para resetar o formulário
+        function resetForm() {
+            document.getElementById('medicoId').value = '';
+            document.getElementById('id_funcionario').value = '';
+            document.getElementById('crm').value = '';
+        }
+
+        // Chama a função para buscar médicos ao carregar a página
+        window.onload = fetchMedicos;
+        document.getElementById('medicoForm').addEventListener('submit', addOrUpdateMedico);
+    </script>
+</body>
+</html>

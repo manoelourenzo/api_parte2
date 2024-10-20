@@ -1,11 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import MedicoViewSet, Plano_de_SaudeViewSet
+from .views import MedicoViewSet, PlanoDeSaudeViewSet, MedicoAtendePlanoViewSet
 
 # Criando um roteador para a API REST
 router = DefaultRouter()
 router.register(r'medicos', MedicoViewSet)  # Registra o ViewSet de médicos
-router.register(r'planos', Plano_de_SaudeViewSet)  # Registra o ViewSet de planos de saúde
+router.register(r'planos', PlanoDeSaudeViewSet)  # Registra o ViewSet de planos de saúde
+router.register(r'medicos-planos', MedicoAtendePlanoViewSet)  # Registra o ViewSet de médicos que atendem planos de saúde
 
 # Defina as URLs
 urlpatterns = [

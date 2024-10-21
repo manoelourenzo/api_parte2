@@ -1,7 +1,9 @@
 # meu_app/views.py
-
 from rest_framework import viewsets
-from django.shortcuts import render
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404, render
 from .models import Medico, PlanoDeSaude, MedicoAtendePlano
 from .serializers import MedicoSerializer, PlanodeSaudeSerializer, MedicoAtendePlanoSerializer
 
@@ -16,6 +18,12 @@ class PlanoDeSaudeViewSet(viewsets.ModelViewSet):
 class MedicoAtendePlanoViewSet(viewsets.ModelViewSet):
     queryset = MedicoAtendePlano.objects.all()
     serializer_class = MedicoAtendePlanoSerializer
+
+@api_view(['DELETE'])
+def delete_medico_plano(request, id_medico, id_plano):
+    medico_plano = get_object_or_404(MedicoAtendePlano, id_medico=id_medico, id_plano=id_plano)
+    medico_plano.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 def lista_medicos(request):
     medicos = Medico.objects.all()

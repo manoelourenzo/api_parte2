@@ -17,22 +17,6 @@
             text-align: center;
             margin-bottom: 20px;
         }
-        .navigation {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .navigation button {
-            padding: 10px 20px;
-            margin: 0 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #003366;
-            color: white;
-            cursor: pointer;
-        }
-        .navigation button:hover {
-            background-color: #00509e;
-        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -86,8 +70,9 @@
     <form id="medicoPlanoForm">
         <input type="hidden" id="medicoPlanoId" />
         <input type="text" id="id_medico" placeholder="ID Médico" required />
-        <input type="text" id="id_plano" placeholder="ID Plano" required />
-        <button type="submit">Adicionar/Editar Médico Plano</button>
+        <input type="text" id="id_plano_antigo" placeholder="ID Plano Antigo" required />
+        <input type="text" id="id_plano" placeholder="ID Plano Novo" required />
+        <button type="submit">Atualizar</button>
     </form>
 
     <table id="medicosPlanosTable">
@@ -95,7 +80,7 @@
             <tr>
                 <th>ID Médico</th>
                 <th>ID Plano</th>
-                <th>Ações</th>
+                
             </tr>
         </thead>
         <tbody>
@@ -119,10 +104,7 @@
                     row.innerHTML = `
                         <td>${medicoPlano.id_medico}</td>
                         <td>${medicoPlano.id_plano}</td>
-                        <td>
-                            <button onclick="editMedicoPlano(${medicoPlano.id_medico}, ${medicoPlano.id_plano})">Editar</button>
-                            <button onclick="deleteMedicoPlano(${medicoPlano.id_medico}, ${medicoPlano.id_plano})">Deletar</button>
-                        </td>
+                       
                     `;
                     medicosPlanosTableBody.appendChild(row);
                 });
@@ -130,67 +112,89 @@
                 console.error('Erro ao buscar médicos planos:', error);
             }
         }
-
-        // Função para adicionar ou editar médico plano
-        async function addOrUpdateMedicoPlano(event) {
+        // Operação para substituir o plano de um médico
+        async function substituirPlano(event){
             event.preventDefault(); // Impede o envio do formulário
+
             const id_medico = document.getElementById('id_medico').value;
             const id_plano = document.getElementById('id_plano').value;
-            const method = 'POST'; // Sempre faz POST, pois a chave primária é composta
-            const url = apiUrl;
-
-            try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ id_medico, id_plano }),
-                });
-
-                if (response.ok) {
-                    fetchMedicosPlanos(); // Atualiza a lista de médicos planos
-                    resetForm(); // Reseta o formulário
-                } else {
-                    console.error('Erro ao adicionar/editar médico plano:', response.statusText);
-                }
-            } catch (error) {
-                console.error('Erro:', error);
-            }
-        }
-
-        // Função para editar médico plano
-        function editMedicoPlano(id_medico, id_plano) {
-            document.getElementById('id_medico').value = id_medico;
-            document.getElementById('id_plano').value = id_plano;
-        }
-
-        // Função para deletar médico plano
-        async function deleteMedicoPlano(id_medico, id_plano) {
-            try {
-                const response = await fetch(`${apiUrl}${id_medico}/${id_plano}/`, {
+            const id_plano_antigo = document.getElementById('id_plano_antigo').value;
+            
+            
+                //Operação 1, deletar o plano antigo
+                try{
+                    const response1 = await fetch(`${apiUrl}${id_medico}/${id_plano_antigo}/`, {
                     method: 'DELETE',
-                });
+                    });
+                        if(response1.ok){
+                            console.log('Primeira Operação realizada com sucesso')
 
-                if (response.ok) {
-                    fetchMedicosPlanos(); // Atualiza a lista de médicos planos
-                } else {
-                    console.error('Erro ao deletar médico plano:', response.statusText);
+                            fetchMedicosPlanos(); // Atualiza a lista de médicos planos
+                
+                            //Operação 2, adicionar o novo plano
+                            try{    
+                                const response2 = await fetch(apiUrl,{
+                                    method: 'POST',
+                                    headers: {
+                                    'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ id_medico, id_plano}),
+                                    }) 
+                                        if (response2.ok) {
+                                            console.log('Segunda operação realizada com sucesso')
+                                                fetchMedicosPlanos(); // Atualiza a lista de médicos planos
+                                                resetForm(); // Reseta o formulário
+                                        }else{
+                                            await desfazerMudancas(id_medico, id_plano_antigo)
+                                        }
+
+                            }catch(e2){
+                                console.error('Erro:', e2);
+                                
+                                console.log('Segunda operação falhou')
+                                
+                            }
+                        }
+                                        
+                }catch (e1){
+                    console.log('Primeira operação falhou')
+                    console.error('Erro:', e1);
                 }
-            } catch (error) {
-                console.error('Erro:', error);
-            }
+                       
+                
+            
         }
+
+        //FUnção para fazer o rollback da função
+        async function desfazerMudancas(id_medico, id_plano){
+            const url = apiUrl;
+            //Fazendo roollback
+            const rollbackResponse = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id_medico, id_plano }),
+            })
+        
+        if(rollbackResponse.ok) {
+            console.log('Mudanças desfeitas com sucesso"')
+            fetchMedicosPlanos()
+        }else console.log('Erro ao desfazer mudanças')
+        }
+        
+
 
         // Função para resetar o formulário
         function resetForm() {
             document.getElementById('id_medico').value = '';
             document.getElementById('id_plano').value = '';
+            document.getElementById('id_plano_antigo').value = '';
         }
 
         // Chama a função para buscar médicos planos ao carregar a página
         window.onload = fetchMedicosPlanos;
-        document.getElementById('medicoPlanoForm').addEventListener('submit', addOrUpdateMedicoPlano);
+        document.getElementById('medicoPlanoForm').addEventListener('submit', substituirPlano);
     </script>
 </body>
 </html>
